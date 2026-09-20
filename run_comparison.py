@@ -10,6 +10,7 @@ run_comparison.py  (프로젝트 루트에서 실행)
 - 결과는 화면 + comparison_result.csv 로 저장.
 """
 
+import asyncio
 import csv
 from agent.mission_runner import MissionRunner
 from agent.sim_executor import SimExecutor
@@ -34,7 +35,7 @@ def decisions_str(result):
     return " | ".join(parts)
 
 
-def main():
+async def main():
     rows = []
     for sc in SCENARIOS:
         print("=" * 68)
@@ -43,10 +44,10 @@ def main():
 
         # 두 방식 각각 새 executor로 (상태 공유 방지)
         rule_exec = SimExecutor(scripted=dict(sc["scripted"]))
-        rule_run = MissionRunner(rule_exec, decision_mode="rule").run(COMMAND)
+        rule_run = await MissionRunner(rule_exec, decision_mode="rule").run(COMMAND)
 
         llm_exec = SimExecutor(scripted=dict(sc["scripted"]))
-        llm_run = MissionRunner(llm_exec, decision_mode="llm").run(COMMAND)
+        llm_run = await MissionRunner(llm_exec, decision_mode="llm").run(COMMAND)
 
         rule_path = decisions_str(rule_run)
         llm_path = decisions_str(llm_run)
@@ -67,7 +68,7 @@ def main():
         })
 
     with open("comparison_result.csv", "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()), lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
     print("comparison_result.csv 저장 완료 →", len(rows), "개 시나리오")
@@ -76,4 +77,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

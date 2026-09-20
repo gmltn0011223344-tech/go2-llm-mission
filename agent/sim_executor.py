@@ -22,7 +22,7 @@ class SimExecutor:
         self.recover_on_retry = recover_on_retry
         self.seen = {}   # target별 실행 횟수
 
-    def __call__(self, task: dict) -> str:
+    async def execute_async(self, task: dict) -> str:
         action = task.get("action")
         target = task.get("target")
 
@@ -44,3 +44,16 @@ class SimExecutor:
         if action == "OBSERVE":
             return "TARGET_FOUND"
         return "REACHED"
+
+    def __call__(self, task: dict) -> str:
+        """기존 단위 테스트를 위한 동기 실행. async Runner는 execute_async를 사용."""
+        action = task.get("action")
+        target = task.get("target")
+        self.seen[target] = self.seen.get(target, 0) + 1
+        attempt = self.seen[target]
+        if action == "RETURN_HOME":
+            return "REACHED"
+        scripted_state = self.scripted.get(target)
+        if scripted_state and not (self.recover_on_retry and attempt >= 2):
+            return scripted_state
+        return "TARGET_FOUND" if action == "OBSERVE" else "REACHED"

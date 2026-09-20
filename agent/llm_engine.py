@@ -14,7 +14,38 @@ import os
 import json
 from agent.schema import ACTIONS
 
-MODEL_NAME = "claude-sonnet-5"  # 실행 전, Anthropic 콘솔에서 현재 사용 가능한 모델명인지 확인하세요.
+MODEL_NAME = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
+
+PLAN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "tasks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "action": {"type": "string", "enum": ACTIONS},
+                    "target": {"type": ["string", "null"]},
+                },
+                "required": ["action", "target"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["tasks"],
+    "additionalProperties": False,
+}
+
+DECISION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "next_action": {"type": "string", "enum": ACTIONS},
+        "target": {"type": ["string", "null"]},
+        "reason": {"type": "string"},
+    },
+    "required": ["next_action", "target", "reason"],
+    "additionalProperties": False,
+}
 
 DECOMPOSE_SYSTEM = f"""당신은 4족보행 로봇 Go2의 작업 계획기입니다.
 사용자의 자연어 명령을 아래 행동만 사용한 순서 있는 작업 목록(JSON)으로 변환하세요.
@@ -56,6 +87,7 @@ def real_decompose_command(nl_command: str) -> dict:
     resp = _client().messages.create(
         model=MODEL_NAME, max_tokens=500, system=DECOMPOSE_SYSTEM,
         messages=[{"role": "user", "content": nl_command}],
+        output_config={"format": {"type": "json_schema", "schema": PLAN_SCHEMA}},
     )
     return json.loads(resp.content[0].text)
 
@@ -65,6 +97,7 @@ def real_llm_next_action(state: str, context: dict) -> dict:
     resp = _client().messages.create(
         model=MODEL_NAME, max_tokens=300, system=NEXT_ACTION_SYSTEM,
         messages=[{"role": "user", "content": user_msg}],
+        output_config={"format": {"type": "json_schema", "schema": DECISION_SCHEMA}},
     )
     return json.loads(resp.content[0].text)
 

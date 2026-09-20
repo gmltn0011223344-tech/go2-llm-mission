@@ -25,16 +25,29 @@ STATES = [
 ]
 
 
-def validate_action_output(output: dict) -> tuple[bool, str]:
+def validate_action_output(
+    output: dict,
+    allowed_waypoints: set[str] | None = None,
+) -> tuple[bool, str]:
     """
     LLM/Rule이 내놓은 다음-행동 JSON이 스키마를 지키는지 검사.
     지금 단계에서 제일 중요한 안전장치 — 이게 없으면 LLM이 이상한 값을
     내도 그냥 통과되어 버립니다.
     """
+    if not isinstance(output, dict):
+        return False, "출력이 JSON 객체가 아님"
     if "next_action" not in output:
         return False, "next_action 필드 없음"
     if output["next_action"] not in ACTIONS:
         return False, f"허용되지 않은 행동: {output['next_action']}"
     if output["next_action"] in ("MOVE_TO", "OBSERVE") and not output.get("target"):
         return False, f"{output['next_action']}인데 target이 없음"
+    if output["next_action"] == "RETURN_HOME" and output.get("target") != "HOME":
+        return False, "RETURN_HOME의 target은 HOME이어야 함"
+    if (
+        allowed_waypoints
+        and output["next_action"] in ("MOVE_TO", "RETURN_HOME")
+        and output.get("target") not in allowed_waypoints
+    ):
+        return False, f"등록되지 않은 이동 목적지: {output.get('target')}"
     return True, "ok"

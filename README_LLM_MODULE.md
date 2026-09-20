@@ -10,7 +10,7 @@
 자연어 명령
    ↓  decompose_command()        (agent/llm_engine.py)
 작업 목록 JSON  [{MOVE_TO:RED}, {MOVE_TO:BLUE}, {OBSERVE:LAPTOP}, {RETURN_HOME}]
-   ↓  MissionRunner.run()        (agent/mission_runner.py)
+   ↓  await MissionRunner.run()  (agent/mission_runner.py)
 작업 하나 실행 → 상태값 수신 ── executor가 담당
    │                              · 실제 로봇: agent/robot_executor.py
    │                              · 시뮬레이터: agent/sim_executor.py
@@ -44,14 +44,15 @@
 python3 run_comparison.py
 ```
 → 4개 시나리오에서 Rule vs LLM 판단을 비교, `comparison_result.csv` 저장.
-현재 결과: **경로차단·물체없음 2개 시나리오에서 LLM이 Rule과 다르게 대응**
-(경로차단 시 Rule은 같은 경로 재시도, LLM은 대안 경로 우회 /
-물체없음 시 Rule은 즉시 복귀, LLM은 다른 각도에서 재관찰).
+API 키가 없을 때의 결과는 **Rule과 mock 적응형 판단의 코드 흐름 확인용**입니다.
+실제 LLM 성능 자료로 사용하면 안 됩니다. 현재 mock에서는 물체없음 시나리오에서
+Rule은 즉시 복귀하고 mock 판단은 1회 재관찰하여 판단 경로가 달라집니다.
 
 실제 로봇 (다령 님 실행부와 연결):
 ```
 export GO2_AES_KEY="..."          # 다령 님 README 참고
 export ANTHROPIC_API_KEY="..."    # 없으면 mock으로 동작
+export ANTHROPIC_MODEL="claude-sonnet-5"  # 생략 시 이 값 사용
 python3 main_llm.py
 ```
 
@@ -62,5 +63,14 @@ python3 main_llm.py
 | LLM 호출 | API 키 없으면 mock | `export ANTHROPIC_API_KEY` 설정 (코드 수정 불필요) |
 | Vision 탐지 | `vision/detector.py`의 mock | `USE_REAL_VISION=True` + `real_detect_target()` 구현 |
 | 스티커 좌표 | A/B 좌표 재사용 | `robot_executor.py`의 `WAYPOINTS` 실제 좌표 입력 |
-| 모델명 | `agent/llm_engine.py`의 `MODEL_NAME` | Anthropic 콘솔에서 현재 사용 가능한 모델명 확인 후 교체 |
+| 모델명 | 기본값 `claude-sonnet-5` | 필요하면 `ANTHROPIC_MODEL` 환경변수로 변경 |
+
+## 실제 통합 전에 남은 작업
+
+- 다령 님 저장소에서 브랜치를 만든 뒤 이 모듈을 병합하고 실제 Go2로 실행
+- 다령 님 `vision.py`가 탐지 결과를 반환하도록 바꿔 `OBSERVE`와 연결
+- 실제 waypoint 좌표 확정 및 허용 목록 고정
+- API 호출 성공, 구조화 출력, 호출 지연시간과 비용 기록
+- AUTO/ASK 모드와 사용자 승인·거절·수정 처리 구현
+- 실제 예외상황을 반복해 Rule과 LLM의 완료율·안전정지율·응답시간 비교
 ```

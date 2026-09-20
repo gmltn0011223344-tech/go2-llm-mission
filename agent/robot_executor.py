@@ -9,14 +9,12 @@ agent/robot_executor.py
 main_llm.py에서 사용합니다.
 
 주의:
-- MissionRunner는 현재 동기(sync) 루프인데, navigation은 async입니다.
-  그래서 각 작업 실행을 asyncio.run_coroutine_threadsafe 대신,
-  간단히 이벤트 루프에서 돌리는 helper로 감쌌습니다. (main_llm.py 참고)
+- MissionRunner와 navigation을 모두 async로 통일했습니다.
+- 실제 로봇 통합 시 MissionRunner.run()을 반드시 await해야 합니다.
 - WAYPOINTS(장소 이름 → 좌표)는 다령 님 main.py의 값을 그대로 씁니다.
   스티커 지점(RED/BLUE/GREEN)이 정해지면 여기 좌표만 채우면 됩니다.
 """
 
-import asyncio
 from agent.state_adapter import nav_result_to_state, observe_result_to_state
 from vision.detector import detect_target
 
@@ -86,8 +84,4 @@ class RobotExecutor:
                 print(f"[EXEC] 카메라 프레임 획득 실패: {e}")
         return "MOCK_FRAME"
 
-    # MissionRunner(동기)에서 호출하기 위한 동기 래퍼
-    def __call__(self, task: dict) -> str:
-        return asyncio.get_event_loop().run_until_complete(
-            self.execute_async(task)
-        )
+    # MissionRunner가 async로 통일되어 execute_async()를 직접 await합니다.

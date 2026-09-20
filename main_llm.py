@@ -13,10 +13,8 @@ main_llm.py  (프로젝트 루트에서 실행)
     python3 main_llm.py
 
 주의:
-- RobotExecutor는 내부에서 navigation.goto_and_wait()(async)를 돌립니다.
-  MissionRunner는 동기라, 여기서는 전체를 하나의 이벤트 루프 안에서 돌리도록
-  간단한 동기 래퍼(RobotExecutor.__call__)를 씁니다. 실제 로봇에서 async 충돌이
-  나면, MissionRunner.run을 스레드로 분리하는 방식으로 바꾸면 됩니다(주석 참고).
+- RobotExecutor와 MissionRunner를 모두 async로 통일했습니다.
+- 실제 로봇과 카메라 통합 실행은 아직 검증 전입니다.
 """
 
 import asyncio
@@ -82,11 +80,11 @@ async def main():
     print("==============================\n")
 
     runner = MissionRunner(executor, decision_mode=DECISION_MODE)
-    result = runner.run(COMMAND)
+    result = await runner.run(COMMAND)
 
     print("\n==============================")
     print("[MISSION] 종료")
-    print(f"  성공 여부: {result['success']}, 총 스텝: {result['steps']}")
+    print(f"  종료 상태: {result['status']}, 성공 여부: {result['success']}, 총 스텝: {result['steps']}")
     print("==============================")
     for e in result["log"]:
         print(f"  {e['step']}. 실행={e['executed']['action']}:"
