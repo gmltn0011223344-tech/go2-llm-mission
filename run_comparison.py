@@ -1,5 +1,8 @@
 """
-run_comparison.py  (프로젝트 루트에서 실행)
+run_comparison.py  (참고용 — 핵심 평가는 run_auto_ask_eval.py)
+
+2026-09-21 방향 변경으로 Rule vs LLM 비교는 핵심 평가가 아닙니다.
+시뮬레이터 좌표(RED/BLUE)를 임시 허용해 기존 비교 흐름만 남겨 둡니다.
 
 로봇 없이 시뮬레이터로 같은 시나리오를 Rule 방식과 LLM 방식으로 각각 돌려
 결과를 비교합니다. 발표의 핵심 근거(= "왜 LLM이 필요한가")를 만드는 스크립트.
@@ -15,6 +18,7 @@ import csv
 from agent.mission_runner import MissionRunner
 from agent.sim_executor import SimExecutor
 
+SIM_WAYPOINTS = {"RED", "BLUE", "HOME"}
 COMMAND = "빨간 지점을 지나 파란 지점에서 노트북이 있는지 확인하고 돌아와"
 
 # 시나리오: 특정 목표에서 어떤 예외를 강제로 낼지
@@ -30,7 +34,7 @@ def decisions_str(result):
     """로그의 각 스텝을 '상태→결정' 한 줄로 이어붙임 (방식 간 차이를 한눈에)."""
     parts = []
     for e in result["log"]:
-        parts.append(f"{e['state']}→{e['next_action']}"
+        parts.append(f"{e['state']}→{e['next_action'] or 'ASK'}"
                      + (f":{e['next_target']}" if e.get("next_target") else ""))
     return " | ".join(parts)
 
@@ -44,10 +48,10 @@ async def main():
 
         # 두 방식 각각 새 executor로 (상태 공유 방지)
         rule_exec = SimExecutor(scripted=dict(sc["scripted"]))
-        rule_run = await MissionRunner(rule_exec, decision_mode="rule").run(COMMAND)
+        rule_run = await MissionRunner(rule_exec, decision_mode="rule", allowed_waypoints=SIM_WAYPOINTS).run(COMMAND)
 
         llm_exec = SimExecutor(scripted=dict(sc["scripted"]))
-        llm_run = await MissionRunner(llm_exec, decision_mode="llm").run(COMMAND)
+        llm_run = await MissionRunner(llm_exec, decision_mode="llm", allowed_waypoints=SIM_WAYPOINTS).run(COMMAND)
 
         rule_path = decisions_str(rule_run)
         llm_path = decisions_str(llm_run)

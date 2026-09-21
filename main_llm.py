@@ -15,6 +15,9 @@ main_llm.py  (프로젝트 루트에서 실행)
 주의:
 - RobotExecutor와 MissionRunner를 모두 async로 통일했습니다.
 - 실제 로봇과 카메라 통합 실행은 아직 검증 전입니다.
+- 예외 시 LLM이 AUTO(스스로 대응) / ASK(사용자 확인)를 고르고,
+  ASK는 터미널에서 사용자 답변(RETRY / RETURN_HOME / STOP)을 받은 뒤에만 실행합니다.
+- WAYPOINTS에 좌표가 없는 목적지(RED/BLUE/GREEN 등)는 확정 전까지 사용하지 않습니다.
 """
 
 import asyncio
@@ -27,14 +30,17 @@ from robot.map_manager import Go2MapManager
 from agent.robot_executor import RobotExecutor
 from agent.mission_runner import MissionRunner
 
+import inspect
+
 
 MAP_ID = "9slQWWk1gZduAEWnEpiUyg"
 INITIAL_POSE = (0.013, 0.023, 0.000)
 
 # 시연 명령 (자연어)
-COMMAND = "빨간 지점을 지나 파란 지점에서 노트북이 있는지 확인하고 돌아와"
+COMMAND = "A 지점으로 가서 병이 있는지 확인하고 돌아와"   # 등록된 A/B/HOME과 YOLO 기본 클래스만 사용
 
-# 예외 대응을 Rule로 할지 LLM으로 할지 ("rule" / "llm")
+# 판단 방식: "llm"(기본) — LLM이 AUTO/ASK를 선택하고, 안전 규칙과 Rule 대체가 항상 함께 적용됨
+#           "rule"      — LLM 없이 Rule 대체 정책만 사용 (API 오류 대비·참고용)
 DECISION_MODE = "llm"
 
 
@@ -68,6 +74,12 @@ async def setup_robot():
     return navigation, localization
 
 
+async def ask_user_cli(question):
+    """ASK 결정 시 사용자에게 묻는다. 이벤트 루프를 막지 않도록 스레드에서 input 실행."""
+    print(f"\n[ASK] {question}")
+    return await asyncio.to_thread(input, "  RETRY / RETURN_HOME / STOP 중 입력 > ")
+
+
 async def main():
     navigation, localization = await setup_robot()
 
@@ -79,17 +91,22 @@ async def main():
     print(f"[MISSION] 예외 대응 방식: {DECISION_MODE}")
     print("==============================\n")
 
-    runner = MissionRunner(executor, decision_mode=DECISION_MODE)
+    kwargs = {"decision_mode": DECISION_MODE}
+    if "ask_user" in inspect.signature(MissionRunner.__init__).parameters:
+        kwargs["ask_user"] = ask_user_cli
+    runner = MissionRunner(executor, **kwargs)
     result = await runner.run(COMMAND)
 
     print("\n==============================")
     print("[MISSION] 종료")
+    if result.get("question"):
+        print(f"  사용자 확인 필요: {result['question']}")
     print(f"  종료 상태: {result['status']}, 성공 여부: {result['success']}, 총 스텝: {result['steps']}")
     print("==============================")
     for e in result["log"]:
         print(f"  {e['step']}. 실행={e['executed']['action']}:"
               f"{e['executed'].get('target')} 상태={e['state']} → "
-              f"결정={e['next_action']}:{e.get('next_target')} | {e['reason']}")
+              f"[{e.get('mode', '-')}] 결정={e['next_action'] or 'ASK'}:{e.get('next_target')} | {e['reason']}")
 
 
 if __name__ == "__main__":

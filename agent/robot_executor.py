@@ -12,23 +12,23 @@ main_llm.py에서 사용합니다.
 - MissionRunner와 navigation을 모두 async로 통일했습니다.
 - 실제 로봇 통합 시 MissionRunner.run()을 반드시 await해야 합니다.
 - WAYPOINTS(장소 이름 → 좌표)는 다령 님 main.py의 값을 그대로 씁니다.
-  스티커 지점(RED/BLUE/GREEN)이 정해지면 여기 좌표만 채우면 됩니다.
+  좌표 없는 지점은 등록하지 않습니다 (LLM이 만들어도 실행 전에 차단).
 """
 
 from agent.state_adapter import nav_result_to_state, observe_result_to_state
 from vision.detector import detect_target
 
 
-# 다령 님 main.py의 WAYPOINTS를 기반으로. 실제 스티커 좌표로 교체하세요.
+from agent.schema import REGISTERED_WAYPOINTS
+
+# 다령 님 main.py의 WAYPOINTS. 실제 좌표가 확인된 지점만 둔다.
+# 새 지점(C 등)은 맵에서 좌표를 확인한 뒤 여기와 schema.REGISTERED_WAYPOINTS에 함께 추가.
 WAYPOINTS = {
     "A": (0.835, 0.298, 0.000),
     "B": (-0.302, 0.307, 0.000),
-    # 시연용 스티커 지점 — 맵에서 좌표 확인 후 채우기
-    "RED": (0.835, 0.298, 0.000),
-    "BLUE": (-0.302, 0.307, 0.000),
-    "GREEN": (0.000, 0.000, 0.000),
     "HOME": (0.013, 0.023, 0.000),   # INITIAL_POSE
 }
+assert set(WAYPOINTS) == REGISTERED_WAYPOINTS, "WAYPOINTS와 REGISTERED_WAYPOINTS가 다릅니다"
 
 
 class RobotExecutor:

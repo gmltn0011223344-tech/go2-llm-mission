@@ -2,8 +2,8 @@
 agent/sim_executor.py
 
 로봇 없이 임무 루프를 돌리기 위한 가짜 실행부.
-지정한 시나리오대로 상태값을 뱉습니다. Rule vs LLM 비교 실험과
-주말 오프라인 테스트에 사용합니다.
+지정한 시나리오대로 상태값을 돌려줍니다. AUTO/ASK 판단 평가와
+오프라인 테스트에 사용합니다. recover_on_retry=False면 실패가 반복됩니다.
 
 사용법:
     exec = SimExecutor(scripted={"BLUE": "NO_PATH", "LAPTOP": "TARGET_NOT_FOUND"})
