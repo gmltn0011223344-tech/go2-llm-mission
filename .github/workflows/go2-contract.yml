@@ -1,0 +1,31 @@
+name: Go2 contract tests
+
+on:
+  pull_request:
+    paths:
+      - 'integration/**'
+      - 'tests/test_go2_contract.py'
+      - 'tests/test_go2_integration_smoke.py'
+      - '.github/workflows/go2-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'integration/**'
+      - 'tests/test_go2_contract.py'
+      - 'tests/test_go2_integration_smoke.py'
+      - '.github/workflows/go2-contract.yml'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run Go2 interface contract tests
+        run: python -m unittest discover -s tests -p 'test_go2_contract.py' -v
+      - name: Run isolated integration smoke test
+        run: python -m unittest discover -s tests -p 'test_go2_integration_smoke.py' -v
