@@ -28,7 +28,9 @@ MBO-YOLO 해양생물 탐지 모듈 (독립 실행 가능)
     FRAME_FAILED      : 사진 자체를 못 얻음. (counts 가 전부 None)
     INFERENCE_FAILED  : 사진은 정상인데 모델 로드/추론이 실패. (counts 가 전부 None)
 
-    즉 "0" 은 '봤는데 없었다', "None" 은 '보지 못했다' 라는 뜻이다.
+    즉 "0" 은 '정상적으로 추론했지만 해당 객체가 검출되지 않았다'는 뜻이며,
+    실제 객체의 부재가 확정된 것은 아니다.
+    "None" 은 '추론 자체를 수행하지 못했다'는 뜻이다.
 """
 
 from __future__ import annotations
@@ -253,7 +255,7 @@ class MBODetector:
                 "values": values,
             }
 
-        # 5) 박스 그린 이미지 저장 (탐지 0개여도 저장한다. '봤는데 없었다'는 증거가 된다)
+        # 5) 박스 그린 이미지 저장 (탐지 0개여도 저장한다. 정상 추론 후 미검출 기록으로 활용)
         if self.save_images:
             result["image"]["annotated_image_path"] = self._save(
                 self._draw(frame, detections), stem + "_det.jpg", result)
