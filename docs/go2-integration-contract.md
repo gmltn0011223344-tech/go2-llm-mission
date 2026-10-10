@@ -43,3 +43,10 @@ Python 3.10+ 사용. 테스트는 실제 Go2, Ollama, SQLite 및 Ultralytics 설
 - Vision 실패를 DB에 어떤 상태/컬럼으로 기록할지
 - MBO-YOLO 탐지기 버전 및 운영 Confidence
 - 실제 관측 완료 후 재관측 시 사용할 행동 허용 범위와 검증 방식
+
+## CI 확인 (2026-10-10)
+
+- GitHub Actions [실행 결과](https://github.com/gmltn0011223344-tech/go2-llm-mission/actions/runs/38044755221): 성공
+- Go2 데이터 계약 단위 테스트 **15개 통과**
+- 가상 2회 순회 → 6건 관측 → 스크립트형 REOBSERVE 응답 → 7번째 재관측 → 스크립트형 CONTINUE 검증 **3개 통과**
+- 두 테스트 모두 Python 3.12 표준 라이브러리 기반의 합성 데이터 테스트. **실제 로봇 이동, YOLO 추론, SQLite 저장, Ollama 판단을 실행하거나 검증한 것은 아님.**
