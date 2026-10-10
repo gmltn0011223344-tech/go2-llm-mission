@@ -149,7 +149,7 @@ LLM 판단 → 검증 통과? ──예──▶ LLM 결과 (llm)
 
 **Vision Detector (`vision/mbo_detector.py`, 별도 환경):**
 - MBO-YOLO 최종 모델을 사용하는 탐지 모듈 (김희수 구현)
-- OK / FRAME_FAILED / INFERENCE_FAILED 3-상태 반환 — 0은 "봤는데 없었다", 빈 값은 "보지 못했다"
+- OK / FRAME_FAILED / INFERENCE_FAILED 3-상태 반환 — OK에서 탐지 0개는 "정상 추론했지만 검출되지 않았다"는 뜻이며 실제 부재가 확정된 것은 아님
 - 구조 테스트: 가짜 모델로 31개 항목 검사 → 31개 통과
 - 이 파일은 현재 GitHub에 반영되지 않았습니다
 
@@ -177,7 +177,7 @@ python3 run_auto_ask_eval.py
 **주의사항:**
 - `ANTHROPIC_API_KEY`가 없으면 mock 판단을 사용합니다. mock 결과는 LLM 성능이 아닌 코드·채점 로직 점검용입니다.
 - `main_llm.py`의 실제 로봇 실행에는 팀원의 별도 로봇 코드 및 Go2 실행 환경이 필요합니다.
-- Python 3.12 가상환경 권장 (3.14에서는 설치 불가 확인됨).
+- Python 3.12 가상환경 권장.
 
 ## 6. 프로젝트 파일 구조
 
@@ -197,7 +197,7 @@ python3 run_auto_ask_eval.py
 | `run_comparison.py` | 초기 Rule/LLM 비교 참고 코드 |
 | `main_llm.py` | 실제 로봇 연동 실행 진입점 |
 | `README_LLM_MODULE.md` | 초기 자연어 임무 계획·예외 대응 시스템 상세 설명 |
-| `docs/` | 상세 개발 이력, 실험 결과, 시스템 설계 문서 |
+| `docs/` | 객체 탐지(`object-detection.md`)와 LLM Agent(`llm-agent.md`) 상세 문서 |
 
 **별도 개발 환경에 있으며 현재 이 저장소에 미반영:**
 - `vision/mbo_detector.py` — MBO-YOLO 기반 탐지 모듈 (김희수 구현)
