@@ -50,3 +50,14 @@ Python 3.10+ 사용. 테스트는 실제 Go2, Ollama, SQLite 및 Ultralytics 설
 - Go2 데이터 계약 단위 테스트 **15개 통과**
 - 가상 2회 순회 → 6건 관측 → 스크립트형 REOBSERVE 응답 → 7번째 재관측 → 스크립트형 CONTINUE 검증 **3개 통과**
 - 두 테스트 모두 Python 3.12 표준 라이브러리 기반의 합성 데이터 테스트. **실제 로봇 이동, YOLO 추론, SQLite 저장, Ollama 판단을 실행하거나 검증한 것은 아님.**
+
+## Vision 모듈 → SQLite까지의 추가 검증
+
+- [GitHub Actions 실행 결과](https://github.com/gmltn0011223344-tech/go2-llm-mission/actions/runs/38045402743): **전체 통과**
+- `tests/test_vision_sqlite_bridge.py`: **3개 추가 테스트 통과** (총 신규 21개: 계약 15 + 합성 시나리오 3 + Vision·SQLite 3)
+- 가짜 YOLO 모델을 `MBODetector`에 주입해 **실제 탐지기 Python 모듈의 파싱·`to_observation()` 구현**을 실행
+- 실제 SQLite `:memory:` 연결에 관측 6건 INSERT → 지점별 이전 관측 조회 → 7번째 재관측 INSERT → 에이전트 요청·스크립트 판단 검증
+- `FRAME_FAILED` 발생 시 None을 0으로 바꾸지 않고 DB 기록 거절 확인
+- SQL은 자리표시자(`?`)를 사용하며 지점 조건의 임의 문자열로 다른 행을 조회하지 않음
+
+**검증 경계:** 실제 `mbo_final.pt`로 YOLO 예측을 수행하거나, 황다령 님의 실제 SQLite 파일·로봇 실행부·Ollama를 호출한 테스트는 아님. 황다령 님 저장소는 읽기 전용으로 비교했으며 코드를 복사하거나 수정하지 않았음.
